@@ -3,8 +3,8 @@ package com.instantservices.backend.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
-import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
@@ -23,13 +23,20 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()  // login/register allowed
-                        .anyRequest().authenticated()                  // everything else protected
+                        // PUBLIC ENDPOINTS
+                        .requestMatchers("/api/auth/**").permitAll()
+
+                        // PROTECTED ENDPOINTS
+                        .requestMatchers("/api/tasks/**").authenticated()
+                        .requestMatchers("/api/offers/**").authenticated()
+
+                        // EVERYTHING ELSE
+                        .anyRequest().authenticated()
                 )
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable());
 
-        // ADD JWT FILTER
+        // Register JWT filter BEFORE username/password auth filter
         http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
