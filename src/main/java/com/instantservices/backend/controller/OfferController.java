@@ -1,9 +1,8 @@
 package com.instantservices.backend.controller;
 
-
-
 import com.instantservices.backend.config.JwtUtil;
 import com.instantservices.backend.dto.OfferRequest;
+import com.instantservices.backend.dto.OfferResponse;
 import com.instantservices.backend.model.Offer;
 import com.instantservices.backend.service.OfferService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -28,19 +27,23 @@ public class OfferController {
         return jwtUtil.extractEmail(auth.substring(7));
     }
 
-    @PostMapping
-    public Offer sendOffer(@RequestBody OfferRequest req, HttpServletRequest request) {
+    @PostMapping     // POST /api/offers
+    public OfferResponse sendOffer(@RequestBody OfferRequest req,
+                                   HttpServletRequest request) {
         String email = getEmail(request);
         return offerService.sendOffer(req, email);
     }
 
-    @GetMapping("/task/{taskId}")
-    public List<Offer> getOffersForTask(@PathVariable Long taskId) {
+    @GetMapping("/task/{taskId}")   // GET /api/offers/task/3
+    public List<OfferResponse> getOffersForTask(@PathVariable Long taskId) {
         return offerService.getOffersForTask(taskId);
     }
 
     @PostMapping("/{offerId}/accept")
-    public Offer acceptOffer(@PathVariable Long offerId) {
-        return offerService.acceptOffer(offerId);
+    public OfferResponse acceptOffer(@PathVariable Long offerId, HttpServletRequest request) {
+        String email = getEmail(request);
+        Offer offer = offerService.acceptOffer(offerId, email);
+        return offerService.toResponse(offer);
     }
+
 }
