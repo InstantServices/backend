@@ -1,18 +1,29 @@
 package com.instantservices.backend.service;
 
 
-import com.instantservices.backend.dto.CreateTaskRequest;
-import com.instantservices.backend.dto.TaskResponse;
-import com.instantservices.backend.model.AppUser;
-import com.instantservices.backend.model.Task;
-import com.instantservices.backend.model.TaskStatus;
+import com.instantservices.backend.dto.*;
+import com.instantservices.backend.model.*;
 import com.instantservices.backend.repository.AppUserRepository;
+import com.instantservices.backend.repository.DeliveryProofRepository;
+import com.instantservices.backend.repository.PaymentRepository;
 import com.instantservices.backend.repository.TaskRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.security.crypto.bcrypt.BCrypt;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.Instant;
+import java.util.Random;
+
+import com.instantservices.backend.service.PaymentService;
+
 
 import java.util.stream.Collectors;
 
@@ -22,13 +33,22 @@ public class TaskService {
     private final TaskRepository taskRepository;
     private final AppUserRepository userRepository;
     private final UserProfileService userProfileService;
+    private final PaymentRepository paymentRepository;
+    private final PaymentService paymentService;
+    private final PasswordEncoder passwordEncoder;
+    private final DeliveryProofRepository dpRepo;
+
 
     public TaskService(TaskRepository taskRepository,
                        AppUserRepository userRepository,
-                       UserProfileService userProfileService) {
+                       UserProfileService userProfileService, PaymentRepository paymentRepository, PaymentService paymentService, PasswordEncoder passwordEncoder, DeliveryProofRepository dpRepo) {
         this.taskRepository = taskRepository;
         this.userRepository = userRepository;
         this.userProfileService = userProfileService;
+        this.paymentRepository = paymentRepository;
+        this.paymentService = paymentService;
+        this.passwordEncoder = passwordEncoder;
+        this.dpRepo = dpRepo;
     }
 
     @Transactional
@@ -92,6 +112,131 @@ public class TaskService {
         Task t = taskRepository.findById(id).orElseThrow(() -> new RuntimeException("Task not found"));
         return toResponse(t);
     }
+    @Transactional
+    public DeliveryResponse markDelivered(Long taskId, DeliveryProofRequest req, String email) throws IOException {
+
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new RuntimeException("Task not found"));
+
+        if (!task.getAcceptedBy().getEmail().equals(email)) {
+            throw new RuntimeException("Only assigned doer can deliver.");
+        }
+
+        // Create DeliveryProof entry
+        DeliveryProof dp = new DeliveryProof();
+        dp.setTaskId(taskId);
+        dp.setDoerId(task.getAcceptedBy().getId());
+        dp.setCreatedAt(Instant.now());
+
+        // ============================
+        // 1) PHOTO PROOF (optional)
+        // ============================
+        // Ensure uploads directory exists
+        Path uploadDir = Paths.get("uploads");
+        if (!Files.exists(uploadDir)) {
+            Files.createDirectories(uploadDir);
+        }
+        if (req.getPhoto() != null && !req.getPhoto().isEmpty()) {
+            String fileName = System.currentTimeMillis() + "_" + req.getPhoto().getOriginalFilename();
+            Path path = Paths.get("uploads/" + fileName);
+            Files.copy(req.getPhoto().getInputStream(), path);
+            dp.setPhotoUrl("/uploads/" + fileName);
+            dp.setType("PHOTO");
+        }
+
+        // ============================
+        // 2) OTP PROOF (optional)
+        // ============================
+        String otp = null;
+        if (req.isGenerateOtp()) {
+            otp = String.valueOf(100000 + new Random().nextInt(900000));
+            dp.setOtpHash(passwordEncoder.encode(otp));
+            dp.setOtpExpiresAt(Instant.now().plusSeconds(900));
+            dp.setType(dp.getType() == null ? "OTP" : "PHOTO+OTP");
+        }
+
+        dpRepo.save(dp);
+
+        // Update task status
+        task.setStatus(TaskStatus.DELIVERED);
+        taskRepository.save(task);
+
+        // Response
+        DeliveryResponse resp = new DeliveryResponse();
+        resp.setMessage("Delivery proof submitted");
+        resp.setOtp(otp); // for dev only
+
+        return resp;
+    }
+
+    @Transactional
+    public ConfirmResponse confirmDelivery(Long taskId, String otp, String posterEmail) {
+
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new RuntimeException("Task not found"));
+
+        if (!task.getPoster().getEmail().equals(posterEmail)) {
+            throw new RuntimeException("Only task poster can confirm delivery.");
+        }
+
+        if (task.getStatus() != TaskStatus.DELIVERED) {
+            throw new RuntimeException("Task is not delivered yet.");
+        }
+
+        DeliveryProof dp = dpRepo.findByTaskId(taskId)
+                .orElseThrow(() -> new RuntimeException("No delivery proof submitted"));
+
+        boolean otpValid = false;
+
+        if (dp.getOtpHash() != null) {
+            if (otp == null || otp.isBlank())
+                throw new RuntimeException("OTP is required");
+
+            if (dp.getOtpExpiresAt().isBefore(Instant.now()))
+                throw new RuntimeException("OTP expired");
+
+            otpValid = BCrypt.checkpw(otp, dp.getOtpHash());
+            if (!otpValid)
+                throw new RuntimeException("Invalid OTP");
+        }
+
+        if (dp.getOtpHash() == null && dp.getPhotoUrl() != null) {
+            otpValid = true;
+        }
+
+        if (!otpValid) {
+            throw new RuntimeException("Could not validate delivery proof.");
+        }
+
+        // ✅ Mark proof verified
+        dp.setVerifiedAt(Instant.now());
+        dp.setVerifiedBy(task.getPoster().getId());
+        dpRepo.save(dp);
+
+        // ✅ Fetch HELD payment only
+        Payment payment = paymentRepository
+                .findTopByTaskIdAndStatusOrderByCreatedAtDesc(taskId, PaymentStatus.HELD)
+                .orElseThrow(() -> new RuntimeException("Held payment not found"));
+
+        // ✅ Release via service (gateway-safe)
+        Payment released = paymentService.releaseFunds(taskId);
+
+        // ✅ Update task
+        task.setStatus(TaskStatus.COMPLETED);
+        taskRepository.save(task);
+
+        // ✅ Update doer metrics
+        AppUser doer = task.getAcceptedBy();
+        doer.setTasksCompleted(doer.getTasksCompleted() + 1);
+        doer.setTotalEarnings(doer.getTotalEarnings() + released.getAmount());
+        userRepository.save(doer);
+
+        ConfirmResponse resp = new ConfirmResponse();
+        resp.setMessage("Delivery confirmed.");
+        resp.setPaymentStatus(released.getStatus().name());
+        return resp;
+    }
+
 
     private TaskResponse toResponse(Task t) {
         TaskResponse r = new TaskResponse();

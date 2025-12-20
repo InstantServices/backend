@@ -4,6 +4,10 @@ import com.instantservices.backend.config.JwtUtil;
 import com.instantservices.backend.dto.OfferRequest;
 import com.instantservices.backend.dto.OfferResponse;
 import com.instantservices.backend.model.Offer;
+import com.instantservices.backend.model.OfferAcceptResponse;
+import com.instantservices.backend.model.Payment;
+import com.instantservices.backend.model.PaymentStatus;
+import com.instantservices.backend.repository.PaymentRepository;
 import com.instantservices.backend.service.OfferService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.*;
@@ -16,10 +20,12 @@ public class OfferController {
 
     private final OfferService offerService;
     private final JwtUtil jwtUtil;
+    private final PaymentRepository paymentRepository;
 
-    public OfferController(OfferService offerService, JwtUtil jwtUtil) {
+    public OfferController(OfferService offerService, JwtUtil jwtUtil, PaymentRepository paymentRepository) {
         this.offerService = offerService;
         this.jwtUtil = jwtUtil;
+        this.paymentRepository = paymentRepository;
     }
 
     private String getEmail(HttpServletRequest request) {
@@ -40,10 +46,35 @@ public class OfferController {
     }
 
     @PostMapping("/{offerId}/accept")
-    public OfferResponse acceptOffer(@PathVariable Long offerId, HttpServletRequest request) {
+    public OfferAcceptResponse acceptOffer(@PathVariable Long offerId,
+                                           HttpServletRequest request) {
+
         String email = getEmail(request);
         Offer offer = offerService.acceptOffer(offerId, email);
-        return offerService.toResponse(offer);
+
+        OfferResponse offerDto = offerService.toResponse(offer);
+
+        // ✅ fetch HELD payment safely
+        Payment payment = paymentRepository
+                .findTopByTaskIdAndStatusOrderByCreatedAtDesc(
+                        offer.getTask().getId(),
+                        PaymentStatus.HELD
+                )
+                .orElse(null);
+
+        OfferAcceptResponse resp = new OfferAcceptResponse();
+        resp.setOffer(offerDto);
+
+        if (payment != null) {
+            resp.setPaymentId(payment.getId());
+            resp.setPaymentStatus(payment.getStatus().name());
+            resp.setGatewayTxnId(payment.getGatewayTxnId());
+            resp.setAmount(payment.getAmount());
+        }
+
+        return resp;
     }
+
+
 
 }
