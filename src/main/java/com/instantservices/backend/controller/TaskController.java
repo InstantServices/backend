@@ -2,9 +2,10 @@ package com.instantservices.backend.controller;
 
 
 
-import com.instantservices.backend.dto.CreateTaskRequest;
-import com.instantservices.backend.dto.TaskResponse;
+import com.instantservices.backend.config.JwtUtil;
+import com.instantservices.backend.dto.*;
 import com.instantservices.backend.service.TaskService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,8 +15,11 @@ import org.springframework.web.bind.annotation.*;
 public class TaskController {
 
     private final TaskService taskService;
+    private final JwtUtil jwtUtil;
 
-    public TaskController(TaskService taskService) { this.taskService = taskService; }
+    public TaskController(TaskService taskService, JwtUtil jwtUtil) { this.taskService = taskService;
+        this.jwtUtil = jwtUtil;
+    }
 
     // Create task (authenticated)
     @PostMapping
@@ -42,4 +46,31 @@ public class TaskController {
         TaskResponse resp = taskService.getTask(id);
         return ResponseEntity.ok(resp);
     }
+    @PostMapping(value = "/{taskId}/deliver", consumes = "multipart/form-data")
+    public ResponseEntity<?> markDelivered(
+            @PathVariable Long taskId,
+            @ModelAttribute DeliveryProofRequest req,
+            HttpServletRequest request
+    ) throws Exception {
+
+        String email = jwtUtil.extractEmail(request.getHeader("Authorization").substring(7));
+
+        DeliveryResponse resp = taskService.markDelivered(taskId, req, email);
+
+        return ResponseEntity.ok(resp);
+    }
+
+    @PostMapping("/{taskId}/confirm")
+    public ResponseEntity<?> confirmDelivery(@PathVariable Long taskId,
+                                             @RequestBody ConfirmDeliveryRequest req,
+                                             HttpServletRequest request) {
+
+        String email = jwtUtil.extractEmail(request.getHeader("Authorization").substring(7));
+
+        ConfirmResponse resp = taskService.confirmDelivery(taskId, req.getOtp(), email);
+
+        return ResponseEntity.ok(resp);
+    }
+
+
 }

@@ -4,5 +4,6 @@ public enum TaskStatus {
     OPEN,
     ACCEPTED,
     COMPLETED,
+    DELIVERED,
     CANCELLED
 }

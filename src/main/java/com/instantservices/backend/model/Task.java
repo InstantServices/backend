@@ -14,6 +14,17 @@ public class Task {
     @Column(nullable = false)
     private String title;
 
+    public String getDeliveryOtpHash() {
+        return deliveryOtpHash;
+    }
+
+    public void setDeliveryOtpHash(String deliveryOtpHash) {
+        this.deliveryOtpHash = deliveryOtpHash;
+    }
+
+    private String deliveryOtpHash;
+
+
     @Column(length = 2000)
     private String description;
 
