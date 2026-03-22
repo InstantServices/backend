@@ -1,14 +1,25 @@
 package com.instantservices.backend.dto;
 
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+
 public class CreateTaskRequest {
+    @NotBlank
     private String title;
+    @NotBlank
     private String description;
+    @NotBlank
     private String category;
+    @NotNull
     private Double offeredPrice;
+    @NotNull
     private Double commission;
+    @NotBlank
     private String city;
+    @NotNull
     private Double latitude;
+    @NotNull
     private Double longitude;
 
     public CreateTaskRequest() {}

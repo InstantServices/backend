@@ -10,6 +10,7 @@ import com.instantservices.backend.model.PaymentStatus;
 import com.instantservices.backend.repository.PaymentRepository;
 import com.instantservices.backend.service.OfferService;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -27,16 +28,18 @@ public class OfferController {
         this.jwtUtil = jwtUtil;
         this.paymentRepository = paymentRepository;
     }
-
-    private String getEmail(HttpServletRequest request) {
-        String auth = request.getHeader("Authorization");
-        return jwtUtil.extractEmail(auth.substring(7));
+    //  NEW: Get current user email (REPLACES jwtUtil usage)
+    private String getCurrentUserEmail() {
+        return SecurityContextHolder.getContext().getAuthentication().getName();
     }
+
+
+
 
     @PostMapping     // POST /api/offers
     public OfferResponse sendOffer(@RequestBody OfferRequest req,
                                    HttpServletRequest request) {
-        String email = getEmail(request);
+        String email = getCurrentUserEmail(); //  FIX
         return offerService.sendOffer(req, email);
     }
 
@@ -49,12 +52,12 @@ public class OfferController {
     public OfferAcceptResponse acceptOffer(@PathVariable Long offerId,
                                            HttpServletRequest request) {
 
-        String email = getEmail(request);
+        String email = getCurrentUserEmail(); //  FIX
         Offer offer = offerService.acceptOffer(offerId, email);
 
         OfferResponse offerDto = offerService.toResponse(offer);
 
-        // ✅ fetch HELD payment safely
+        //  fetch HELD payment safely
         Payment payment = paymentRepository
                 .findTopByTaskIdAndStatusOrderByCreatedAtDesc(
                         offer.getTask().getId(),
@@ -74,7 +77,4 @@ public class OfferController {
 
         return resp;
     }
-
-
-
 }

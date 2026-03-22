@@ -7,6 +7,7 @@ import com.instantservices.backend.repository.AppUserRepository;
 import com.instantservices.backend.repository.DeliveryProofRepository;
 import com.instantservices.backend.repository.PaymentRepository;
 import com.instantservices.backend.repository.TaskRepository;
+import jakarta.validation.constraints.Email;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -37,11 +38,12 @@ public class TaskService {
     private final PaymentService paymentService;
     private final PasswordEncoder passwordEncoder;
     private final DeliveryProofRepository dpRepo;
+    private final EmailService emailService;
 
 
     public TaskService(TaskRepository taskRepository,
                        AppUserRepository userRepository,
-                       UserProfileService userProfileService, PaymentRepository paymentRepository, PaymentService paymentService, PasswordEncoder passwordEncoder, DeliveryProofRepository dpRepo) {
+                       UserProfileService userProfileService, PaymentRepository paymentRepository, PaymentService paymentService, PasswordEncoder passwordEncoder, DeliveryProofRepository dpRepo, EmailService emailService) {
         this.taskRepository = taskRepository;
         this.userRepository = userRepository;
         this.userProfileService = userProfileService;
@@ -49,6 +51,7 @@ public class TaskService {
         this.paymentService = paymentService;
         this.passwordEncoder = passwordEncoder;
         this.dpRepo = dpRepo;
+        this.emailService = emailService;
     }
 
     @Transactional
@@ -118,9 +121,23 @@ public class TaskService {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Task not found"));
 
+        if (task.getAcceptedBy() == null) {
+            throw new RuntimeException("Task is not yet accepted");
+        }
+
         if (!task.getAcceptedBy().getEmail().equals(email)) {
             throw new RuntimeException("Only assigned doer can deliver.");
         }
+        if(req==null)
+        {
+            throw new RuntimeException("Request body missing");
+        }
+
+
+        System.out.println("DEBUG TASK:");
+        System.out.println("Task ID: " + task.getId());
+        System.out.println("AcceptedBy: " + (task.getAcceptedBy() != null ? task.getAcceptedBy().getEmail() : "NULL"));
+        System.out.println("Current User: " + email);
 
         // Create DeliveryProof entry
         DeliveryProof dp = new DeliveryProof();
@@ -149,10 +166,20 @@ public class TaskService {
         // ============================
         String otp = null;
         if (req.isGenerateOtp()) {
+
             otp = String.valueOf(100000 + new Random().nextInt(900000));
+
             dp.setOtpHash(passwordEncoder.encode(otp));
             dp.setOtpExpiresAt(Instant.now().plusSeconds(900));
+
             dp.setType(dp.getType() == null ? "OTP" : "PHOTO+OTP");
+
+            //  SEND OTP TO EMAIL
+            String userEmail = task.getPoster().getEmail();
+            emailService.sendOtpEmail(userEmail, otp);
+
+            //  Optional (for debugging only)
+            System.out.println("OTP sent to email: " + otp);
         }
 
         dpRepo.save(dp);
@@ -164,7 +191,8 @@ public class TaskService {
         // Response
         DeliveryResponse resp = new DeliveryResponse();
         resp.setMessage("Delivery proof submitted");
-        resp.setOtp(otp); // for dev only
+        System.out.println("Generated OTP: " + otp);
+        //resp.setOtp(otp); // for dev only
 
         return resp;
     }

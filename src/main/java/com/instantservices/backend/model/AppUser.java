@@ -34,11 +34,20 @@ public class AppUser implements Serializable {
     @Column(name = "tasks_completed")
     private Integer tasksCompleted = 0;
 
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
+    }
+
     @Column(name = "tasks_posted")
     private Integer tasksPosted = 0;
 
     @Column(name = "total_earnings")
     private Double totalEarnings = 0.0;
+    private String role;
 
     // Constructors
     public AppUser() {}

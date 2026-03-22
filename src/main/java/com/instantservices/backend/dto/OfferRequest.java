@@ -1,14 +1,17 @@
 package com.instantservices.backend.dto;
 
 
-
-
-
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 public class OfferRequest {
+
     private Long taskId;
+    @NotNull
     private double proposedCommission;
+    @NotNull
     private String message;
+    @NotNull
     private String expectedTime;
 
     public Long getTaskId() {

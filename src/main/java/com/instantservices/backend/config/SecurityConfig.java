@@ -1,5 +1,6 @@
 package com.instantservices.backend.config;
 
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -22,9 +23,14 @@ public class SecurityConfig {
 
         http
                 .csrf(csrf -> csrf.disable())
+                // ✅ CORS ENABLE
+                .cors(cors -> {})
+
                 .authorizeHttpRequests(auth -> auth
                         // PUBLIC ENDPOINTS
                         .requestMatchers("/api/auth/**").permitAll()
+                        // ✅ ROLE BASED
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
                         // PROTECTED ENDPOINTS
                         .requestMatchers("/api/tasks/**").authenticated()
@@ -32,6 +38,13 @@ public class SecurityConfig {
 
                         // EVERYTHING ELSE
                         .anyRequest().authenticated()
+                )
+                // ✅ EXCEPTION HANDLING
+                .exceptionHandling(e -> e
+                        .authenticationEntryPoint((req, res, ex) -> {
+                            res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                            res.getWriter().write("Unauthorized");
+                        })
                 )
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable());

@@ -4,10 +4,12 @@ package com.instantservices.backend.controller;
 
 import com.instantservices.backend.config.JwtUtil;
 import com.instantservices.backend.dto.*;
+import com.instantservices.backend.service.EmailService;
 import com.instantservices.backend.service.TaskService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -15,10 +17,16 @@ import org.springframework.web.bind.annotation.*;
 public class TaskController {
 
     private final TaskService taskService;
-    private final JwtUtil jwtUtil;
+    private final EmailService emailService;
 
-    public TaskController(TaskService taskService, JwtUtil jwtUtil) { this.taskService = taskService;
-        this.jwtUtil = jwtUtil;
+
+    public TaskController(TaskService taskService, JwtUtil jwtUtil, EmailService emailService) { this.taskService = taskService;
+
+        this.emailService = emailService;
+    }
+    //  Helper method
+    private String getCurrentUserEmail() {
+        return SecurityContextHolder.getContext().getAuthentication().getName();
     }
 
     // Create task (authenticated)
@@ -53,8 +61,7 @@ public class TaskController {
             HttpServletRequest request
     ) throws Exception {
 
-        String email = jwtUtil.extractEmail(request.getHeader("Authorization").substring(7));
-
+        String email =  getCurrentUserEmail();
         DeliveryResponse resp = taskService.markDelivered(taskId, req, email);
 
         return ResponseEntity.ok(resp);
@@ -65,11 +72,15 @@ public class TaskController {
                                              @RequestBody ConfirmDeliveryRequest req,
                                              HttpServletRequest request) {
 
-        String email = jwtUtil.extractEmail(request.getHeader("Authorization").substring(7));
-
+        String email = getCurrentUserEmail();
         ConfirmResponse resp = taskService.confirmDelivery(taskId, req.getOtp(), email);
 
         return ResponseEntity.ok(resp);
+    }
+    @GetMapping("/test-mail")
+    public String testMail() {
+        emailService.sendOtpEmail("your_other_email@gmail.com", "123456");
+        return "Mail sent";
     }
 
 
