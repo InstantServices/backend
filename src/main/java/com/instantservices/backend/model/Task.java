@@ -56,6 +56,9 @@ public class Task {
     @Column(nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 
+    private Instant arrivedAt;
+
+
     public Task() {}
 
     public Long getId() { return id; }
@@ -72,6 +75,14 @@ public class Task {
 
     public Double getOfferedPrice() { return offeredPrice; }
     public void setOfferedPrice(Double offeredPrice) { this.offeredPrice = offeredPrice; }
+
+    public Instant getArrivedAt() {
+        return arrivedAt;
+    }
+
+    public void setArrivedAt(Instant arrivedAt) {
+        this.arrivedAt = arrivedAt;
+    }
 
     public Double getCommission() { return commission; }
     public void setCommission(Double commission) { this.commission = commission; }

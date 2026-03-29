@@ -21,4 +21,5 @@ public interface PaymentService {
      * @param taskId task id (implementation uses this to find the held payment)
      */
     Payment releaseFunds(Long taskId) throws RuntimeException;
+    Payment refundToPoster(Long taskId);
 }

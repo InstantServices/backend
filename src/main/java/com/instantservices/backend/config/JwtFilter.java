@@ -60,6 +60,7 @@ public class JwtFilter extends OncePerRequestFilter {
 
                     UserDetails userDetails = userService.loadUserByUsername(email);
 
+
                     UsernamePasswordAuthenticationToken authToken =
                             new UsernamePasswordAuthenticationToken(
                                     userDetails,

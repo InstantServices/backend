@@ -47,21 +47,21 @@ public class UserService implements UserDetailsService {
             throw new RuntimeException("Invalid email or password");
         }
 
-        // ✅ ACCESS TOKEN
+        //  ACCESS TOKEN
         String accessToken = jwtUtil.generateToken(user.getEmail(), user.getRole());
 
-        // ✅ REFRESH TOKEN
+        //  REFRESH TOKEN
         String refreshToken = jwtUtil.generateRefreshToken(user.getEmail());
 
-        // ❌ REMOVE THIS (WRONG)
+        //  REMOVE THIS (WRONG)
         // String token = jwtUtil.generateToken(user.getEmail());
 
         return new LoginResponse(
                 user.getId(),
                 user.getName(),
                 user.getEmail(),
-                accessToken,   // ✅ FIX
-                refreshToken   // ✅ FIX
+                accessToken,   //  FIX
+                refreshToken   //  FIX
         );
     }
 

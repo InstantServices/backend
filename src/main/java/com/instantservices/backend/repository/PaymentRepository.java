@@ -24,4 +24,9 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
      * Convenience when you only care if any payment exists with this task and status.
      */
     List<Payment> findByTaskIdAndStatus(Long taskId, PaymentStatus status);
+    Optional<Payment> findTopByTaskIdOrderByCreatedAtDesc(Long taskId);
+    Optional<Payment> findTopByTaskIdAndStatusInOrderByCreatedAtDesc(
+            Long taskId, List<PaymentStatus> statuses);
+
+
 }

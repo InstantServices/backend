@@ -10,6 +10,7 @@ import java.util.Optional;
 public interface DeliveryProofRepository extends JpaRepository<DeliveryProof, Long> {
     Optional<DeliveryProof> findByTaskIdAndType(Long taskId, String type);
     Optional<DeliveryProof> findByTaskId(Long taskId);
+    Optional<DeliveryProof> findTopByTaskIdOrderByCreatedAtDesc(Long taskId);
 
 
 }

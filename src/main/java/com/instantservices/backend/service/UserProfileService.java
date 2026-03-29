@@ -68,7 +68,7 @@ public class UserProfileService {
                 user.getLatitude(),
                 user.getLongitude(),
                 user.getBio(),
-                user.getReliabilityScore(),
+                //user.getReliabilityScore(),
                 user.getTasksCompleted(),
                 user.getTasksPosted(),
                 user.getTotalEarnings()

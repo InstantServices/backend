@@ -18,15 +18,17 @@ public class OfferService {
     private final TaskRepository taskRepository;
     private final AppUserRepository userRepository;
     private final PaymentService paymentService;
+    private final TrustScoreService trustScoreService;
 
     public OfferService(OfferRepository offerRepository,
                         TaskRepository taskRepository,
                         AppUserRepository userRepository,
-                        PaymentService paymentService) {
+                        PaymentService paymentService, TrustScoreService trustScoreService) {
         this.offerRepository = offerRepository;
         this.taskRepository = taskRepository;
         this.userRepository = userRepository;
         this.paymentService = paymentService;
+        this.trustScoreService = trustScoreService;
     }
 
     // -------------------------
@@ -119,6 +121,10 @@ public class OfferService {
         // Assign the doer and mark task accepted
         task.setStatus(TaskStatus.ACCEPTED);
         task.setAcceptedBy(offer.getUser());
+        AppUser doer = offer.getUser();
+        doer.setTasksAccepted(doer.getTasksAccepted()+1);
+        userRepository.save(doer);
+        trustScoreService.updateTrustScore(doer);
         taskRepository.save(task);
 
         // Payment hold: idempotent (service will avoid duplicates)

@@ -25,14 +25,10 @@ public class AppUser implements Serializable {
     private String country;             // country
     private Double latitude;            // optional GPS
     private Double longitude;           // optional GPS
-    private String bio;                 // short bio
-
-    // Metrics & trust
-    @Column(name = "reliability_score")
-    private Integer reliabilityScore = 100; // default 100
-
-    @Column(name = "tasks_completed")
-    private Integer tasksCompleted = 0;
+    private String bio;
+    // short bio
+    @Column(name = "wallet_balance")
+    private Double walletBalance = 0.0;
 
     public String getRole() {
         return role;
@@ -42,12 +38,30 @@ public class AppUser implements Serializable {
         this.role = role;
     }
 
-    @Column(name = "tasks_posted")
-    private Integer tasksPosted = 0;
+
+
 
     @Column(name = "total_earnings")
     private Double totalEarnings = 0.0;
+
     private String role;
+
+    private Double averageRating = 0.0;
+    private Integer totalRatings = 0;
+
+    private Integer tasksAccepted = 0;
+    private Integer tasksCompleted = 0;
+    private Integer tasksPosted =0;
+
+    private Integer disputes = 0;
+    private Integer cancellations = 0;
+    private Integer noResponseCount = 0;
+
+    @Column(name="trust_score")
+    private Double trustScore = 50.0;
+
+    private Boolean banned = false;
+
 
     // Constructors
     public AppUser() {}
@@ -83,8 +97,8 @@ public class AppUser implements Serializable {
     public String getBio() { return bio; }
     public void setBio(String bio) { this.bio = bio; }
 
-    public Integer getReliabilityScore() { return reliabilityScore; }
-    public void setReliabilityScore(Integer reliabilityScore) { this.reliabilityScore = reliabilityScore; }
+   // public Integer getReliabilityScore() { return reliabilityScore; }
+    //public void setReliabilityScore(Integer reliabilityScore) { this.reliabilityScore = reliabilityScore; }
 
     public Integer getTasksCompleted() { return tasksCompleted; }
     public void setTasksCompleted(Integer tasksCompleted) { this.tasksCompleted = tasksCompleted; }
@@ -94,4 +108,76 @@ public class AppUser implements Serializable {
 
     public Double getTotalEarnings() { return totalEarnings; }
     public void setTotalEarnings(Double totalEarnings) { this.totalEarnings = totalEarnings; }
+
+    public Double getTrustScore() {
+        return trustScore;
+    }
+
+    public void setTrustScore(Double trustScore) {
+        this.trustScore = trustScore;
+    }
+
+    public Integer getDisputes() {
+        return disputes;
+    }
+
+    public void setDisputes(Integer disputes) {
+        this.disputes = disputes;
+    }
+
+    public Integer getTasksAccepted() {
+        return tasksAccepted;
+    }
+
+    public void setTasksAccepted(Integer tasksAccepted) {
+        this.tasksAccepted = tasksAccepted;
+    }
+
+    public Integer getTotalRatings() {
+        return totalRatings;
+    }
+
+    public void setTotalRatings(Integer totalRatings) {
+        this.totalRatings = totalRatings;
+    }
+
+    public Double getAverageRating() {
+        return averageRating;
+    }
+
+    public void setAverageRating(Double averageRating) {
+        this.averageRating = averageRating;
+    }
+
+    public Integer getNoResponseCount() {
+        return noResponseCount;
+    }
+
+    public void setNoResponseCount(Integer noResponseCount) {
+        this.noResponseCount = noResponseCount;
+    }
+
+    public Integer getCancellations() {
+        return cancellations;
+    }
+
+    public void setCancellations(Integer cancellations) {
+        this.cancellations = cancellations;
+    }
+
+    public Double getWalletBalance() {
+        return walletBalance==null?0.0:walletBalance;
+    }
+
+    public void setWalletBalance(Double walletBalance) {
+        this.walletBalance = walletBalance;
+    }
+
+    public Boolean getBanned() {
+        return banned;
+    }
+
+    public void setBanned(Boolean banned) {
+        this.banned = banned;
+    }
 }

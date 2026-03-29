@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface TaskRepository extends JpaRepository<Task, Long> {
@@ -24,4 +25,5 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     Page<Task> findByCityAndStatus(String city, TaskStatus status, Pageable pageable);
 
     Page<Task> findByCategoryAndStatus(String category, TaskStatus status, Pageable pageable);
+    List<Task> findByStatus(TaskStatus status);
 }

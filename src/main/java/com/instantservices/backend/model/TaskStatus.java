@@ -3,7 +3,9 @@ package com.instantservices.backend.model;
 public enum TaskStatus {
     OPEN,
     ACCEPTED,
+    ARRIVED,
     COMPLETED,
-    DELIVERED,
-    CANCELLED
+    DISPUTED,
+    CANCELLED,
+    REFUNDED
 }

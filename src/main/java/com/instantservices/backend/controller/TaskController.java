@@ -54,34 +54,39 @@ public class TaskController {
         TaskResponse resp = taskService.getTask(id);
         return ResponseEntity.ok(resp);
     }
-    @PostMapping(value = "/{taskId}/deliver", consumes = "multipart/form-data")
-    public ResponseEntity<?> markDelivered(
-            @PathVariable Long taskId,
-            @ModelAttribute DeliveryProofRequest req,
-            HttpServletRequest request
-    ) throws Exception {
 
-        String email =  getCurrentUserEmail();
-        DeliveryResponse resp = taskService.markDelivered(taskId, req, email);
 
-        return ResponseEntity.ok(resp);
-    }
 
-    @PostMapping("/{taskId}/confirm")
-    public ResponseEntity<?> confirmDelivery(@PathVariable Long taskId,
-                                             @RequestBody ConfirmDeliveryRequest req,
-                                             HttpServletRequest request) {
-
-        String email = getCurrentUserEmail();
-        ConfirmResponse resp = taskService.confirmDelivery(taskId, req.getOtp(), email);
-
-        return ResponseEntity.ok(resp);
-    }
     @GetMapping("/test-mail")
     public String testMail() {
         emailService.sendOtpEmail("your_other_email@gmail.com", "123456");
         return "Mail sent";
     }
+
+    @PostMapping("/{taskId}/arrived")
+    public ResponseEntity<?> markArrived(@PathVariable Long taskId) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        String resp = taskService.markArrived(taskId, email);
+        return ResponseEntity.ok(resp);
+    }
+
+    @PostMapping("/{taskId}/verify-otp")
+    public ResponseEntity<?> verifyOtp(@PathVariable Long taskId,
+                                       @RequestBody ConfirmDeliveryRequest req) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        ConfirmResponse resp = taskService.verifyOtp(taskId, req.getOtp(), email);
+        return ResponseEntity.ok(resp);
+    }
+
+    @PostMapping("/{taskId}/cancel")
+    public ResponseEntity<?> cancelTask(@PathVariable Long taskId)
+    {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        String resp = taskService.cancelTask(taskId,email);
+        return ResponseEntity.ok(resp);
+    }
+
+
 
 
 }

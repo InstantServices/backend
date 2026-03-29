@@ -10,7 +10,7 @@ public class UserProfileResponse {
     private Double latitude;
     private Double longitude;
     private String bio;
-    private Integer reliabilityScore;
+    //private Integer reliabilityScore;
     private Integer tasksCompleted;
     private Integer tasksPosted;
     private Double totalEarnings;
@@ -89,13 +89,13 @@ public class UserProfileResponse {
         this.bio = bio;
     }
 
-    public Integer getReliabilityScore() {
-        return reliabilityScore;
-    }
-
-    public void setReliabilityScore(Integer reliabilityScore) {
-        this.reliabilityScore = reliabilityScore;
-    }
+//    public Integer getReliabilityScore() {
+//        return reliabilityScore;
+//    }
+//
+//    public void setReliabilityScore(Integer reliabilityScore) {
+//        this.reliabilityScore = reliabilityScore;
+//    }
 
     public Integer getTasksCompleted() {
         return tasksCompleted;
@@ -123,7 +123,7 @@ public class UserProfileResponse {
 
     // constructor
     public UserProfileResponse(Long id, String email, String name, String phone, String city, String country,
-                               Double latitude, Double longitude, String bio, Integer reliabilityScore,
+                               Double latitude, Double longitude, String bio,
                                Integer tasksCompleted, Integer tasksPosted, Double totalEarnings) {
         this.id = id;
         this.email = email;
@@ -134,13 +134,11 @@ public class UserProfileResponse {
         this.latitude = latitude;
         this.longitude = longitude;
         this.bio = bio;
-        this.reliabilityScore = reliabilityScore;
+        //this.reliabilityScore = reliabilityScore;
         this.tasksCompleted = tasksCompleted;
         this.tasksPosted = tasksPosted;
         this.totalEarnings = totalEarnings;
     }
 
-    // getters & setters (omitted for brevity; generate in your IDE)
-    // ... please generate them to compile
-    // (or I can paste them if you'd like)
+
 }
