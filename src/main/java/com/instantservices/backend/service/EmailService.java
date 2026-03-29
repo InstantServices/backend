@@ -3,12 +3,16 @@ package com.instantservices.backend.service;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.util.Collections;
 
 @Service
 public class EmailService {
     private final JavaMailSender mailSender;
+
+    @Value("${mail.from}")
+    private String fromMail;
 
     public EmailService(JavaMailSender mailSender) {
         this.mailSender = mailSender;
@@ -36,7 +40,7 @@ public void sendOtpEmail(String toEmail, String otp) {
     try {
         SimpleMailMessage message = new SimpleMailMessage();
 
-        message.setFrom("vijayalakshmigogineni2005@gmail.com"); // MUST MATCH VERIFIED SENDER
+        message.setFrom(fromMail); // MUST MATCH VERIFIED SENDER
         message.setTo(toEmail);
         message.setSubject("Delivery OTP Verification");
         message.setText(
